@@ -1,0 +1,21 @@
+# Local toolchains
+node-v*/**
+.npm-cache/
+
+# Dependency directories
+node_modules/
+
+# Build artifacts
+dist/
+dist-ssr/
+coverage/
+
+# Environment files
+.env
+.env.local
+
+# Editor & OS cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp

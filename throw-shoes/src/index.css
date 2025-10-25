@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,7 +9,20 @@
 }
 
 body {
-  @apply min-h-screen bg-slate-950 text-slate-100 antialiased;
+  @apply min-h-screen bg-slate-950 text-slate-100 antialiased font-sans font-light text-[17px] leading-relaxed;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  .heading-fun {
+    @apply font-display font-semibold tracking-wide;
+  }
+
+  .tagline-fun {
+    @apply font-bubble font-normal uppercase tracking-[0.3em];
+  }
 }
 
 @layer utilities {
@@ -24,5 +39,186 @@ body {
 
   .animate-reaction-pop {
     animation: fadeIn 180ms ease-out forwards;
+  }
+
+  @keyframes firework-burst {
+    0% {
+      transform: scale(0.2);
+      opacity: 0.9;
+    }
+    60% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+  }
+
+  @keyframes firework-trail {
+    0% {
+      transform: translateY(60%) scaleY(0.3);
+      opacity: 0.7;
+    }
+    40% {
+      transform: translateY(-10%) scaleY(1.1);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-90%) scaleY(0.4);
+      opacity: 0;
+    }
+  }
+
+  @keyframes celebration-glow {
+    0%,
+    100% {
+      opacity: 0.8;
+      transform: translateY(0);
+      filter: drop-shadow(0 0 6px rgba(252, 211, 77, 0.5));
+    }
+    50% {
+      opacity: 1;
+      transform: translateY(-4px);
+      filter: drop-shadow(0 0 10px rgba(252, 211, 77, 0.85));
+    }
+  }
+
+  @keyframes sparkle-pop {
+    0% {
+      transform: scale(0.2) translateY(12px);
+      opacity: 0;
+    }
+    40% {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(0.4) translateY(-24px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes confetti-fall {
+    0% {
+      transform: translate3d(0, -120%, 0) rotateZ(0deg) rotateX(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    60% {
+      transform: translate3d(0, 70vh, 0) rotateZ(120deg) rotateX(180deg);
+      opacity: 0.85;
+    }
+    100% {
+      transform: translate3d(0, 110vh, 0) rotateZ(360deg) rotateX(360deg);
+      opacity: 0;
+    }
+  }
+
+  .celebration-overlay {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .celebration-overlay__glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 30%, rgba(254, 240, 138, 0.35), rgba(14, 165, 233, 0.05) 54%, rgba(15, 23, 42, 0));
+    animation: celebration-glow 2.4s ease-in-out infinite;
+  }
+
+  .firework {
+    position: absolute;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(252, 211, 77, 0.95) 0%, rgba(249, 115, 22, 0.6) 45%, rgba(15, 23, 42, 0) 70%);
+    animation: firework-burst 1s ease-out forwards;
+    filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.7));
+  }
+
+  .firework--lg {
+    width: 28px;
+    height: 28px;
+    animation-duration: 1.4s;
+  }
+
+  .firework--sm {
+    width: 14px;
+    height: 14px;
+    animation-duration: 0.9s;
+  }
+
+  .firework__trail {
+    position: absolute;
+    width: 4px;
+    height: 48px;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(59, 130, 246, 0));
+    animation: firework-trail 680ms ease-out forwards;
+  }
+
+  .firework::after,
+  .firework::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle, rgba(248, 250, 252, 0.9) 0%, rgba(248, 113, 113, 0.2) 60%, rgba(15, 23, 42, 0) 80%);
+  }
+
+  .sparkle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(248, 250, 252, 0.95), rgba(251, 191, 36, 0.5) 55%, rgba(14, 165, 233, 0));
+    filter: drop-shadow(0 0 6px rgba(248, 250, 252, 0.6));
+    animation: sparkle-pop 1.6s ease-out infinite;
+  }
+
+  .celebration-overlay__confetti {
+    position: absolute;
+    inset: 0;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    top: -12%;
+    width: 0.6rem;
+    height: 1.4rem;
+    border-radius: 0.2rem;
+    background: var(--confetti-color, rgba(59, 130, 246, 0.85));
+    opacity: 0;
+    animation: confetti-fall linear forwards;
+    box-shadow: 0 0 8px rgba(15, 23, 42, 0.15);
+  }
+
+  .celebration-overlay__banner {
+    position: absolute;
+    inset-x: 0;
+    bottom: 12%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .celebration-banner {
+    padding: 0.6rem 1.4rem;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, rgba(250, 204, 21, 0.9), rgba(249, 115, 22, 0.85));
+    color: #0f172a;
+    font-family: inherit;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    animation: celebration-glow 1.2s ease-in-out infinite;
   }
 }

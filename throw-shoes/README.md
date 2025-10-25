@@ -1,4 +1,45 @@
-# React + TypeScript + Vite
+# Throw Shoes at Boss – Asset Workflow
+
+## Boss API & Live Editing
+
+The boss roster now lives behind a lightweight HTTP API so new caricatures can be added without touching the bundle. To run the API locally:
+
+```bash
+npm run dev:server
+```
+
+This spins up `server/index.js` on <http://localhost:4000>. Vite (via `npm run dev`) proxies all `/api/*` calls to that port, so keep the API running alongside the React dev server.
+
+When you add a boss from the UI:
+
+1. Upload a mugshot and a headless caricature body (PNG with transparency).
+2. The backend stores the originals under `public/uploads/<bossId>/`, invokes `utils/cropfaceutil.py` to crop the face and detect the neck anchor, and computes stage placement metadata.
+3. The newly minted boss is appended to `server/data/bosses.json`, which becomes the authoritative source for future sessions.
+
+To seed the roster from scratch, the API copies `server/data/seed-bosses.json` into `server/data/bosses.json` on boot. Metrics such as `metrics.totalHits` are persisted for future leaderboard work.
+
+## Face Cropping Tool
+
+All playable boss portraits live under `src/assets`. To convert raw photos into the circular, transparent PNGs used by the game, run the helper script:
+
+```bash
+python3 scripts/face_cropper.py src/assets/Original src/assets/Cropped
+```
+
+The script searches the input folder for JPEG/PNG/WEBP files, detects the facial region, and exports square PNGs with a feathered alpha channel—matching the examples already in `src/assets/Cropped`. Use `--overwrite` when you want to regenerate existing crops and `--verbose` for progress logs. The output never mutates the source files; it only writes new PNGs (e.g. `SaurabhVerma.png`) to the destination directory.
+
+To process individual files, point the first argument directly at the image:
+
+```bash
+python3 scripts/face_cropper.py src/assets/Test/SaurabhVerma.jpeg src/assets/Cropped
+```
+
+Optional flags:
+
+- `--feather-ratio <0‑1>` tunes how much of the face remains fully opaque before the edge fade.
+- `--debug-masks` drops intermediate masks in `face_cropper_debug/` for tuning thresholds.
+
+## React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

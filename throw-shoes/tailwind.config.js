@@ -1,3 +1,5 @@
+import defaultTheme from 'tailwindcss/defaultTheme'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -6,6 +8,11 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Inter Tight"', ...defaultTheme.fontFamily.sans],
+        display: ['"Inter Tight"', ...defaultTheme.fontFamily.sans],
+        bubble: ['"Inter Tight"', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
         ink: {
           50: '#f4f7fb',

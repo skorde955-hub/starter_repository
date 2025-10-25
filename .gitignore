@@ -13,6 +13,7 @@ coverage/
 # Environment files
 .env
 .env.local
+.venv/
 
 # Editor & OS cruft
 .DS_Store

@@ -18,6 +18,19 @@ When you add a boss from the UI:
 
 To seed the roster from scratch, the API copies `server/data/seed-bosses.json` into `server/data/bosses.json` on boot. Metrics such as `metrics.totalHits` are persisted for future leaderboard work.
 
+## Python environment
+
+Image tooling in `scripts/` and `utils/` depends on NumPy, Pillow, OpenCV, and MediaPipe. Keep those third‑party libraries out of git by installing them into a local virtual environment inside `throw-shoes/.venv/` (now ignored):
+
+```bash
+cd throw-shoes
+python3 -m venv .venv          # create once
+source .venv/bin/activate      # macOS/Linux; use .venv\Scripts\activate on Windows
+pip install -r requirements.txt
+```
+
+Each new shell session requires reactivating the environment before running `python scripts/face_cropper.py` or `python utils/cropfaceutil.py`. Upgrade dependencies with `pip install -r requirements.txt --upgrade` when needed, and run `deactivate` to exit the virtual environment.
+
 ## Face Cropping Tool
 
 All playable boss portraits live under `src/assets`. To convert raw photos into the circular, transparent PNGs used by the game, run the helper script:

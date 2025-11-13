@@ -13,3 +13,5 @@ coverage
 tmp
 **/Thumbs.db
 infra/tmp
+.venv
+node-v22.12.0-linux-x64

@@ -1,0 +1,20 @@
+substitutions:
+  _IMAGE: 'local/frontend'
+  _API_BASE: '/api'
+
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '-f',
+        'Dockerfile.frontend',
+        '-t',
+        '$_IMAGE',
+        '--build-arg',
+        'VITE_API_BASE_URL=$_API_BASE',
+        '.',
+      ]
+
+images:
+  - '$_IMAGE'

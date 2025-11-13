@@ -31,8 +31,8 @@ gcloud artifacts repositories create throw-shoes \
 
 gcloud builds submit \
   --region=$REGION \
-  --tag $BACKEND_IMAGE \
-  -f Dockerfile.backend
+  --config=cloudbuild.backend.yaml \
+  --substitutions=_IMAGE=$BACKEND_IMAGE .
 
 gcloud run deploy throw-shoes-api \
   --image $BACKEND_IMAGE \
@@ -54,9 +54,8 @@ API_BASE=https://throw-shoes-api-xxxx.a.run.app/api    # replace with actual URL
 
 gcloud builds submit \
   --region=$REGION \
-  --tag $FRONTEND_IMAGE \
-  --build-arg VITE_API_BASE_URL=$API_BASE \
-  -f Dockerfile.frontend
+  --config=cloudbuild.frontend.yaml \
+  --substitutions=_IMAGE=$FRONTEND_IMAGE,_API_BASE=$API_BASE .
 
 gcloud run deploy throw-shoes-web \
   --image $FRONTEND_IMAGE \

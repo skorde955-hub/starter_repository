@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { bossApi } from '../api/BossApi'
 import type { Boss, CreateBossRequest } from '../models/Boss'
+import { normalizeBossAssets } from '../utils/assetPaths'
 
 interface BossContextValue {
   bosses: Boss[]
@@ -31,7 +32,7 @@ export function BossProvider({ children }: { children: ReactNode }) {
     setError(null)
     try {
       const data = await bossApi.list()
-      setBosses(data)
+      setBosses(data.map(normalizeBossAssets))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load bosses')
     } finally {
@@ -45,7 +46,7 @@ export function BossProvider({ children }: { children: ReactNode }) {
 
   const addBoss = useCallback(
     async (payload: CreateBossRequest) => {
-      const boss = await bossApi.create(payload)
+      const boss = normalizeBossAssets(await bossApi.create(payload))
       setBosses((current) => [...current, boss])
       return boss
     },
@@ -54,7 +55,7 @@ export function BossProvider({ children }: { children: ReactNode }) {
 
   const recordHit = useCallback(async (id: string) => {
     try {
-      const updated = await bossApi.recordHit(id)
+      const updated = normalizeBossAssets(await bossApi.recordHit(id))
       setBosses((current) =>
         current.map((boss) => (boss.id === updated.id ? updated : boss)),
       )

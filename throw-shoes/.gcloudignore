@@ -1,0 +1,27 @@
+# This file tells `gcloud builds submit` which files to skip when creating the
+# upload tarball. It understands the same syntax as `.gitignore`.
+
+# keep Cloud Build configs
+!cloudbuild.backend.yaml
+!cloudbuild.frontend.yaml
+
+# ignore everything Git already ignores
+.git
+.gitignore
+
+# reuse the Docker ignore list so the build context stays small
+node_modules
+.npmrc
+.pnpm-store
+.yarn
+.yarnrc*
+dist
+.turbo
+.git
+.gitignore
+.DS_Store
+*.local
+coverage
+tmp
+**/Thumbs.db
+infra/tmp

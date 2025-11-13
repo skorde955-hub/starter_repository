@@ -264,9 +264,10 @@ class BossService {
 }
 
 class BossHttpServer {
-  constructor({ service, port = 4000 }) {
+  constructor({ service, port = 4000, publicDir }) {
     this.service = service
     this.port = port
+    this.publicDir = publicDir
     this.server = http.createServer(this.requestHandler.bind(this))
   }
 
@@ -283,6 +284,9 @@ class BossHttpServer {
 
     try {
       const url = new URL(req.url, `http://${req.headers.host}`)
+      if (req.method === 'GET' && this.tryServeStatic(url.pathname, res)) {
+        return
+      }
       if (req.method === 'GET' && url.pathname === '/api/bosses') {
         const data = this.service.listBosses().map((boss) => boss.toJSON())
         this.json(res, 200, { bosses: data })
@@ -334,6 +338,28 @@ class BossHttpServer {
     res.end(JSON.stringify(payload))
   }
 
+  tryServeStatic(pathname, res) {
+    if (!this.publicDir) return false
+    if (!pathname.startsWith('/uploads/')) return false
+    const decoded = decodeURIComponent(pathname)
+    const absolute = path.join(this.publicDir, decoded)
+    if (!absolute.startsWith(this.publicDir)) {
+      this.json(res, 403, { error: 'Forbidden' })
+      return true
+    }
+    if (!fs.existsSync(absolute) || !fs.statSync(absolute).isFile()) {
+      return false
+    }
+    res.statusCode = 200
+    res.setHeader('Content-Type', guessMimeType(absolute))
+    const stream = fs.createReadStream(absolute)
+    stream.pipe(res)
+    stream.on('error', () => {
+      this.json(res, 500, { error: 'Failed to read file' })
+    })
+    return true
+  }
+
   listen() {
     this.server.listen(this.port, () => {
       console.log(`[boss-server] listening on http://localhost:${this.port}`)
@@ -352,8 +378,29 @@ function bootstrap() {
     uploadsDir: path.join(projectRoot, 'public', 'uploads'),
   })
   const service = new BossService({ repository, assetPipeline })
-  const server = new BossHttpServer({ service, port: process.env.PORT || 4000 })
+  const server = new BossHttpServer({
+    service,
+    port: process.env.PORT || 4000,
+    publicDir: path.join(projectRoot, 'public'),
+  })
   server.listen()
 }
 
 bootstrap()
+
+function guessMimeType(filePath) {
+  const ext = path.extname(filePath).toLowerCase()
+  switch (ext) {
+    case '.png':
+      return 'image/png'
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg'
+    case '.webp':
+      return 'image/webp'
+    case '.json':
+      return 'application/json'
+    default:
+      return 'application/octet-stream'
+  }
+}

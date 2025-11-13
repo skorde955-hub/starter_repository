@@ -8,8 +8,15 @@ interface BossResponse {
   boss: Boss
 }
 
+const DEFAULT_API_BASE = '/api'
+const apiBaseUrl = (() => {
+  const raw = import.meta?.env?.VITE_API_BASE_URL ?? DEFAULT_API_BASE
+  if (typeof raw !== 'string' || !raw.trim()) return DEFAULT_API_BASE
+  return raw.replace(/\/+$/, '') || DEFAULT_API_BASE
+})()
+
 class BossApi {
-  private readonly baseUrl = '/api/bosses'
+  private readonly baseUrl = `${apiBaseUrl}/bosses`
 
   async list(): Promise<Boss[]> {
     const response = await fetch(this.baseUrl)

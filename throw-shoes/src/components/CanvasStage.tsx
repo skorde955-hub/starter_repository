@@ -60,6 +60,23 @@ const UNIVERSAL_FACE_CLIP = {
   y: 0.68,
 }
 const UNIVERSAL_FACE_ROTATION = 0
+const IMPACT_TEXT_OPTIONS: Record<ImpactStrength, string[]> = {
+  light: ['Ouch!', 'Tink!', 'Boop!'],
+  medium: ['Kaboom!', 'Thwack!', 'Smash!'],
+  heavy: ['KABOOM!', 'CRITICAL!', 'MEGA OUCH!'],
+}
+const IMPACT_TEXT_COLORS: Record<ImpactStrength, string> = {
+  light: '#fef08a',
+  medium: '#fcd34d',
+  heavy: '#fb7185',
+}
+const IMPACT_TEXT_SIZE: Record<ImpactStrength, number> = {
+  light: 18,
+  medium: 22,
+  heavy: 28,
+}
+const IMPACT_TEXT_LIFETIME = 2200
+const IMPACT_TEXT_FADE_DELAY = 520
 
 type BossMood = 'idle' | 'flinch' | 'stunned'
 
@@ -93,6 +110,29 @@ interface Particle {
   size: number
   hue: number
   strength: ImpactStrength
+}
+
+interface ImpactText {
+  id: number
+  text: string
+  x: number
+  y: number
+  vx: number
+  vy: number
+  age: number
+  life: number
+  strength: ImpactStrength
+}
+
+interface InjuryMark {
+  id: number
+  kind: 'bandage' | 'sweat'
+  normalizedX: number
+  normalizedY: number
+  age: number
+  ttl: number
+  rotation: number
+  scale: number
 }
 
 type BossVisual =
@@ -199,6 +239,8 @@ export function CanvasStage({
   const screenShakeRef = useRef(0)
   const shockwavesRef = useRef<Shockwave[]>([])
   const particlesRef = useRef<Particle[]>([])
+  const injuryMarksRef = useRef<InjuryMark[]>([])
+  const impactTextsRef = useRef<ImpactText[]>([])
   const effectIdRef = useRef(0)
   const lastFrameRef = useRef<number | null>(null)
   const bossAspectRatioRef = useRef(DEFAULT_BOSS_ASPECT_RATIO)
@@ -262,6 +304,8 @@ export function CanvasStage({
     screenShakeRef.current = 0
     shockwavesRef.current = []
     particlesRef.current = []
+    injuryMarksRef.current = []
+    impactTextsRef.current = []
     lastFrameRef.current = null
   }, [])
 
@@ -315,6 +359,59 @@ export function CanvasStage({
     [hypeLevel],
   )
 
+  const spawnInjuryMark = useCallback((point: { x: number; y: number }, strength: ImpactStrength) => {
+    const layout = layoutRef.current
+    if (!layout) return
+    const { boss: bossBounds } = layout
+    const normalizedX = (point.x - bossBounds.x) / bossBounds.width
+    const normalizedY = (point.y - bossBounds.y) / bossBounds.height
+    if (normalizedX < -0.05 || normalizedX > 1.05 || normalizedY < -0.05 || normalizedY > 1.05) {
+      return
+    }
+    const ttl = strength === 'heavy' ? 12000 : strength === 'medium' ? 9000 : 6000
+    effectIdRef.current += 1
+    const kind: InjuryMark['kind'] =
+      strength === 'heavy' && Math.random() > 0.4 ? 'bandage' : 'sweat'
+    const scale = strength === 'heavy' ? 1 : 0.8 + Math.random() * 0.3
+    injuryMarksRef.current.push({
+      id: effectIdRef.current,
+      kind,
+      normalizedX,
+      normalizedY,
+      age: 0,
+      ttl,
+      rotation: (Math.random() - 0.5) * 0.9,
+      scale,
+    })
+    if (injuryMarksRef.current.length > 16) {
+      injuryMarksRef.current.shift()
+    }
+  }, [])
+
+  const spawnImpactText = useCallback((point: { x: number; y: number }, strength: ImpactStrength) => {
+    const options = IMPACT_TEXT_OPTIONS[strength] ?? ['Ouch!']
+    const label = pickRandom(options)
+    effectIdRef.current += 1
+    const variance = strength === 'heavy' ? 34 : strength === 'medium' ? 26 : 20
+    impactTextsRef.current.push({
+      id: effectIdRef.current,
+      text: label,
+      x: point.x + (Math.random() - 0.5) * variance,
+      y: point.y - (22 + Math.random() * 16),
+      vx: (Math.random() - 0.5) * 0.9,
+      vy: -0.8 - Math.random() * 0.6,
+      age: 0,
+      life:
+        IMPACT_TEXT_LIFETIME *
+        (strength === 'heavy' ? 1.2 : strength === 'medium' ? 1 : 0.85) *
+        (0.85 + Math.random() * 0.3),
+      strength,
+    })
+    if (impactTextsRef.current.length > 10) {
+      impactTextsRef.current.shift()
+    }
+  }, [])
+
   const triggerBossImpact = useCallback(
     (point: { x: number; y: number }, strength: ImpactStrength) => {
       const anim = bossAnimRef.current
@@ -330,10 +427,12 @@ export function CanvasStage({
         MAX_SHAKE,
         screenShakeRef.current + STRENGTH_SHAKE[strength],
       )
+      spawnInjuryMark(point, strength)
       spawnShockwave(point, strength)
       spawnParticles(point, strength)
+      spawnImpactText(point, strength)
     },
-    [spawnParticles, spawnShockwave],
+    [spawnImpactText, spawnInjuryMark, spawnParticles, spawnShockwave],
   )
 
   const clearProjectile = useCallback(() => {
@@ -408,6 +507,8 @@ export function CanvasStage({
       updateBossAnimation(bossAnimRef.current, deltaMs)
       updateShockwaves(shockwavesRef.current, deltaMs)
       updateParticles(particlesRef.current, deltaMs, layout, deltaFactor)
+      updateInjuryMarks(injuryMarksRef.current, deltaMs)
+      updateImpactTexts(impactTextsRef.current, deltaMs, deltaFactor)
 
       screenShakeRef.current *= Math.pow(SHAKE_DECAY, deltaFactor)
       if (screenShakeRef.current < 0.05) {
@@ -429,6 +530,7 @@ export function CanvasStage({
 
       drawCatapult(ctx, layout, catapultSprite, width)
       drawBoss(ctx, layout, bossVisual, bossAnimRef.current, hype, time)
+      drawInjuryMarks(ctx, layout, injuryMarksRef.current)
 
       const slingPoint =
         isDraggingRef.current && hoverRef.current ? hoverRef.current : layout.slingRestPoint
@@ -490,6 +592,7 @@ export function CanvasStage({
 
       drawShockwaves(ctx, shockwavesRef.current, hype)
       drawParticles(ctx, particlesRef.current)
+      drawImpactTexts(ctx, impactTextsRef.current)
 
       ctx.restore()
     },
@@ -980,6 +1083,66 @@ function drawBoss(
   ctx.restore()
 }
 
+function drawInjuryMarks(
+  ctx: CanvasRenderingContext2D,
+  layout: StageLayout,
+  marks: InjuryMark[],
+) {
+  if (!marks.length) return
+  const { boss } = layout
+  for (const mark of marks) {
+    const x = boss.x + clamp(mark.normalizedX, 0, 1) * boss.width
+    const y = boss.y + clamp(mark.normalizedY, 0, 1) * boss.height
+    const progress = clamp01(mark.age / mark.ttl)
+    const alpha = Math.max(0, 1 - progress * 0.92)
+    const pulse = 0.92 + Math.sin(progress * Math.PI * 4) * 0.04
+    const size = boss.width * 0.12 * mark.scale * pulse
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.rotate(mark.rotation)
+    if (mark.kind === 'bandage') {
+      drawBandageMark(ctx, size, alpha)
+    } else {
+      drawSweatDrop(ctx, size * 0.85, alpha)
+    }
+    ctx.restore()
+  }
+}
+
+function drawBandageMark(ctx: CanvasRenderingContext2D, size: number, alpha: number) {
+  ctx.fillStyle = `rgba(253, 230, 202, ${0.85 * alpha})`
+  const strapWidth = size
+  const strapHeight = size * 0.32
+  ctx.save()
+  ctx.rotate(Math.PI / 4)
+  ctx.fillRect(-strapWidth / 2, -strapHeight / 2, strapWidth, strapHeight)
+  ctx.restore()
+  ctx.save()
+  ctx.rotate(-Math.PI / 4)
+  ctx.fillRect(-strapWidth / 2, -strapHeight / 2, strapWidth, strapHeight)
+  ctx.restore()
+  ctx.fillStyle = `rgba(248, 181, 152, ${0.7 * alpha})`
+  const patch = strapHeight * 0.7
+  ctx.fillRect(-patch / 2, -patch / 2, patch, patch)
+}
+
+function drawSweatDrop(ctx: CanvasRenderingContext2D, size: number, alpha: number) {
+  ctx.beginPath()
+  ctx.moveTo(0, -size)
+  ctx.quadraticCurveTo(size * 0.7, -size * 0.3, 0, size)
+  ctx.quadraticCurveTo(-size * 0.7, -size * 0.3, 0, -size)
+  ctx.closePath()
+  ctx.fillStyle = `rgba(56, 189, 248, ${0.62 * alpha})`
+  ctx.fill()
+  ctx.strokeStyle = `rgba(191, 219, 254, ${0.65 * alpha})`
+  ctx.lineWidth = size * 0.08
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.ellipse(-size * 0.2, -size * 0.35, size * 0.25, size * 0.12, 0, 0, Math.PI * 2)
+  ctx.fillStyle = `rgba(224, 242, 254, ${0.55 * alpha})`
+  ctx.fill()
+}
+
 function drawShockwaves(
   ctx: CanvasRenderingContext2D,
   shockwaves: Shockwave[],
@@ -1018,6 +1181,34 @@ function drawParticles(ctx: CanvasRenderingContext2D, particles: Particle[]) {
     ctx.beginPath()
     ctx.ellipse(particle.x, particle.y, sizeX, sizeY, 0, 0, Math.PI * 2)
     ctx.fill()
+  }
+  ctx.restore()
+}
+
+function drawImpactTexts(ctx: CanvasRenderingContext2D, texts: ImpactText[]) {
+  if (!texts.length) return
+  ctx.save()
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  for (const bubble of texts) {
+    const fadeDuration = Math.max(200, bubble.life - IMPACT_TEXT_FADE_DELAY)
+    const fadeProgress = clamp01((bubble.age - IMPACT_TEXT_FADE_DELAY) / fadeDuration)
+    const alpha = Math.pow(1 - fadeProgress, 0.85)
+    if (alpha <= 0) continue
+    const size = IMPACT_TEXT_SIZE[bubble.strength] ?? 20
+    const scale = 0.9 + (1 - fadeProgress) * 0.25
+    ctx.save()
+    ctx.translate(bubble.x, bubble.y)
+    ctx.scale(scale, scale)
+    ctx.globalAlpha = alpha
+    ctx.font = `700 ${size}px "Fredoka", "Plus Jakarta Sans", system-ui`
+    ctx.lineJoin = 'round'
+    ctx.lineWidth = 4
+    ctx.strokeStyle = 'rgba(2, 6, 23, 0.65)'
+    ctx.fillStyle = IMPACT_TEXT_COLORS[bubble.strength] ?? '#fef3c7'
+    ctx.strokeText(bubble.text, 0, 0)
+    ctx.fillText(bubble.text, 0, 0)
+    ctx.restore()
   }
   ctx.restore()
 }
@@ -1306,6 +1497,18 @@ function updateBossAnimation(state: BossAnimationState, deltaMs: number) {
   }
 }
 
+function updateInjuryMarks(marks: InjuryMark[], deltaMs: number) {
+  if (!marks.length) return
+  for (const mark of marks) {
+    mark.age += deltaMs
+  }
+  for (let i = marks.length - 1; i >= 0; i -= 1) {
+    if (marks[i].age >= marks[i].ttl) {
+      marks.splice(i, 1)
+    }
+  }
+}
+
 function updateShockwaves(shockwaves: Shockwave[], deltaMs: number) {
   for (let i = shockwaves.length - 1; i >= 0; i -= 1) {
     const wave = shockwaves[i]
@@ -1347,6 +1550,20 @@ function updateParticles(
   }
 }
 
+function updateImpactTexts(texts: ImpactText[], deltaMs: number, deltaFactor: number) {
+  if (!texts.length) return
+  for (let i = texts.length - 1; i >= 0; i -= 1) {
+    const bubble = texts[i]
+    bubble.age += deltaMs
+    bubble.x += bubble.vx * deltaFactor * 4.2
+    bubble.y += bubble.vy * deltaFactor * 4.2
+    bubble.vy += 0.02 * deltaFactor
+    if (bubble.age >= bubble.life) {
+      texts.splice(i, 1)
+    }
+  }
+}
+
 function clamp01(value: number) {
   return Math.max(0, Math.min(1, value))
 }
@@ -1358,6 +1575,10 @@ function clamp(value: number, min: number, max: number) {
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t
+}
+
+function pickRandom<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)]
 }
 
 function lerpColor(from: string, to: string, t: number) {

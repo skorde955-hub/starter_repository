@@ -56,6 +56,11 @@ Optional flags:
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+### Production builds & Cloud Run
+
+- `VITE_API_BASE_URL` controls where the SPA sends API calls. The dev server proxies `/api` to `localhost:4000`, but production builds should set `VITE_API_BASE_URL` to your deployed API URL (for example `VITE_API_BASE_URL=https://throw-shoes-api-xxxx.a.run.app/api npm run build`).
+- `Dockerfile.backend`, `Dockerfile.frontend`, `.dockerignore`, and `DEPLOYMENT.md` describe the exact Cloud Run workflow for running the Node API + Python tooling alongside the static frontend.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh

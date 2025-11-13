@@ -10,13 +10,14 @@ import type { ImpactStrength } from './data/throwables'
 import { AddBossForm } from './components/AddBossForm'
 import { useBosses } from './state/BossContext'
 import type { Boss } from './models/Boss'
+import { LeaderboardView } from './components/LeaderboardView'
 
-type View = 'selection' | 'stage' | 'add'
+type View = 'selection' | 'stage' | 'add' | 'leaderboard'
 type CrowdMood = 'calm' | 'amped' | 'eruption'
 
 function App() {
   const { bosses, loading: bossesLoading, error: bossesError, recordHit, refresh } = useBosses()
-  const [parodyMode, setParodyMode] = useState(false)
+  const [parodyMode] = useState(false)
   const [selectedBossId, setSelectedBossId] = useState<string | null>(null)
   const [view, setView] = useState<View>('selection')
   const [selectedThrowableId, setSelectedThrowableId] = useState(throwables[0].id)
@@ -41,7 +42,7 @@ function App() {
   const [comboCount, setComboCount] = useState(0)
   const [celebrationActive, setCelebrationActive] = useState(false)
 
-  const { playDraw, playRelease, playImpact, playCelebration } = useSoundBoard()
+  const { playDraw, playRelease, playImpact, playCelebration, playHeavyCheer } = useSoundBoard()
 
   useEffect(() => {
     if (!bossesLoading && bosses.length && !selectedBossId) {
@@ -94,6 +95,9 @@ function App() {
     const crossedCelebration = satisfaction < 90 && newSatisfaction >= 90
     setSatisfaction(newSatisfaction)
     void playImpact(impact.throwableId, impact.strength)
+    if (impact.strength === 'heavy') {
+      void playHeavyCheer()
+    }
     const displayCaption =
       nextCombo > 1 ? `${caption} (Combo x${nextCombo})` : caption
     if (typeof window !== 'undefined' && 'navigator' in window) {
@@ -144,8 +148,8 @@ function App() {
     void playDraw()
   }
 
-  const handleStart = () => {
-    if (!selectedBoss) return
+  const launchStageForBoss = (boss: Boss) => {
+    setSelectedBossId(boss.id)
     setReactionLog([])
     setSatisfaction(52)
     setComboCount(0)
@@ -155,6 +159,11 @@ function App() {
       comboTimeoutRef.current = null
     }
     setView('stage')
+  }
+
+  const handleStart = () => {
+    if (!selectedBoss) return
+    launchStageForBoss(selectedBoss)
   }
 
   const handleReset = () => {
@@ -238,6 +247,16 @@ function App() {
     )
   }
 
+  if (view === 'leaderboard') {
+    return (
+      <LeaderboardView
+        bosses={bosses}
+        onBack={() => setView('selection')}
+        onQueueBoss={(boss) => launchStageForBoss(boss)}
+      />
+    )
+  }
+
   if (view === 'stage' && heroBoss && activeThrowable) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-10 text-slate-100 sm:px-6">
@@ -247,9 +266,11 @@ function App() {
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <p className="text-base uppercase tracking-[0.38em] text-ink-300/70 tagline-fun">Stage Loaded</p>
-                <h1 className="mt-3 text-4xl font-semibold text-white heading-fun sm:text-5xl">{heroBoss.name}</h1>
-                <p className="mt-2 text-lg text-slate-200 font-bubble">{heroBoss.role}</p>
-                <p className="mt-4 text-sm leading-6 text-slate-300 font-bubble">
+                <h1 className="mt-3 text-4xl font-semibold text-white heading-fun sm:text-5xl break-words text-pretty">
+                  {heroBoss.name}
+                </h1>
+                <p className="mt-2 text-lg text-slate-200 font-bubble break-words text-pretty">{heroBoss.role}</p>
+                <p className="mt-4 text-sm leading-6 text-slate-300 font-bubble text-pretty">
                   Drag from the sling zone and release to hurl your equipped item. Hits appear in the console feed instantly.
                 </p>
               </div>
@@ -258,7 +279,7 @@ function App() {
                   type="button"
                   onClick={() => setAimAssist((value) => !value)}
                   aria-pressed={aimAssist}
-                  className={`inline-flex items-center gap-3 rounded-full border px-5 py-2.5 text-base font-medium font-bubble transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400 ${
+                  className={`inline-flex h-12 items-center gap-3 rounded-full border px-5 text-base font-medium font-bubble transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400 ${
                     aimAssist
                       ? 'border-ink-400 bg-ink-500/20 text-white'
                       : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-ink-300/80 hover:text-white'
@@ -272,16 +293,23 @@ function App() {
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="inline-flex items-center justify-center rounded-full border border-slate-700 px-6 py-2.5 text-base font-medium font-bubble text-slate-200 transition hover:border-ink-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400"
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-slate-700 px-6 text-base font-medium font-bubble text-slate-200 transition hover:border-ink-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400"
                 >
                   Switch Boss
                 </button>
                 <button
                   type="button"
                   onClick={() => setView('add')}
-                  className="inline-flex items-center justify-center rounded-full border border-emerald-500/50 bg-emerald-500/20 px-6 py-2.5 text-base font-medium text-emerald-200 transition hover:border-emerald-400 hover:bg-emerald-400/30 hover:text-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-emerald-500/50 bg-emerald-500/20 px-6 text-base font-medium text-emerald-200 transition hover:border-emerald-400 hover:bg-emerald-400/30 hover:text-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 whitespace-nowrap"
                 >
                   Add Boss
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('leaderboard')}
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-rose-500/50 bg-rose-500/10 px-6 text-base font-medium text-rose-100 transition hover:border-rose-400 hover:bg-rose-500/20 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300 whitespace-nowrap"
+                >
+                  Leaderboard
                 </button>
               </div>
             </div>
@@ -301,7 +329,7 @@ function App() {
                 <div className="rounded-full bg-slate-900/70 px-5 py-1.5 text-sm font-semibold uppercase tracking-[0.32em] text-ink-200 shadow-lg shadow-slate-900/30 tagline-fun">
                   Sling Zone
                 </div>
-                <div className="self-end rounded-2xl bg-slate-900/70 px-5 py-3 text-sm leading-6 text-ink-100 shadow-lg shadow-slate-900/30 font-bubble">
+                <div className="self-end rounded-2xl bg-slate-900/70 px-5 py-3 text-sm leading-6 text-ink-100 shadow-lg shadow-slate-900/30 font-bubble text-pretty break-words text-right">
                   {aimAssist
                     ? 'Aim assist on — release to auto-stabilise the arc.'
                     : 'Aim assist off — every throw follows raw input.'}
@@ -312,13 +340,19 @@ function App() {
             <div className="grid gap-4 text-base text-slate-200 font-bubble sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-6">
                 <p className="text-sm font-semibold uppercase tracking-[0.3em] text-ink-300/70 tagline-fun">Target</p>
-                <p className="mt-2 text-xl font-semibold text-white heading-fun">{heroBoss.name}</p>
-                <p className="text-base text-slate-300 font-bubble">{heroBoss.role}</p>
+                <p className="mt-2 text-xl font-semibold text-white heading-fun break-words text-pretty">
+                  {heroBoss.name}
+                </p>
+                <p className="text-base text-slate-300 font-bubble break-words text-pretty">{heroBoss.role}</p>
               </div>
               <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-6">
                 <p className="text-sm font-semibold uppercase tracking-[0.3em] text-ink-300/70 tagline-fun">Equipped</p>
-                <p className="mt-2 text-xl font-semibold text-white heading-fun">{activeThrowable.name}</p>
-                <p className="text-base text-slate-300 font-bubble">{activeThrowable.description}</p>
+                <p className="mt-2 text-xl font-semibold text-white heading-fun break-words text-pretty">
+                  {activeThrowable.name}
+                </p>
+                <p className="text-base text-slate-300 font-bubble break-words text-pretty">
+                  {activeThrowable.description}
+                </p>
                 <p className="mt-3 text-sm uppercase tracking-[0.25em] text-ink-200 tagline-fun">
                   {activeThrowable.arc === 'low'
                     ? 'Arc: Line drive'
@@ -334,7 +368,7 @@ function App() {
                 <p className="mt-2 text-2xl font-semibold text-white heading-fun">
                   {Math.round(satisfaction)}%
                 </p>
-                <p className="text-base text-slate-300 font-bubble">{crowdMessage}</p>
+                <p className="text-base text-slate-300 font-bubble text-pretty break-words">{crowdMessage}</p>
                 <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-slate-800/60">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-fuchsia-500 transition-all duration-300"
@@ -354,7 +388,7 @@ function App() {
                   Momentum
                 </p>
                 <p className="mt-2 text-xl font-semibold text-white heading-fun">{comboLabel}</p>
-                <p className="text-base text-slate-300 font-bubble">
+                <p className="text-base text-slate-300 font-bubble text-pretty break-words">
                   {comboCount > 1
                     ? 'Crowd is roaring — keep the streak alive.'
                     : 'Chain consecutive hits to unlock bonus hype.'}
@@ -369,7 +403,7 @@ function App() {
 
             <section className="font-bubble">
               <p className="text-base font-semibold uppercase tracking-[0.3em] text-slate-400 tagline-fun">Armory</p>
-              <p className="mt-2 text-base text-slate-300">
+              <p className="mt-2 text-base text-slate-300 text-pretty break-words">
                 Queue a throwable before you pull back the sling. Weight now shapes impact sparks and
                 satisfaction gain.
               </p>
@@ -389,48 +423,40 @@ function App() {
           <p className="text-base font-semibold uppercase tracking-[0.4em] text-ink-300/70 tagline-fun">
             Throw Shoes at Boss
           </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white heading-fun sm:text-5xl">
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white heading-fun sm:text-5xl break-words text-pretty">
             Load the impact stage and make it personal
           </h1>
-          <p className="mt-4 text-lg leading-8 text-slate-300">
+          <p className="mt-4 text-lg leading-8 text-slate-300 text-pretty">
             Drop in real portraits or flip to parody mode on demand. Everything runs locally, and the
             satisfaction meter resets the moment the tab closes.
           </p>
         </header>
 
         <section className="mt-10 flex flex-col gap-8 rounded-3xl border border-slate-800 bg-slate-900/60 p-6 font-bubble sm:p-10">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-white heading-fun">Boss Roster</h2>
-              <p className="text-base text-slate-300">
-                Select one avatar to queue the stage or add a new leader to the roster for everyone to sling at.
-              </p>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-white heading-fun">Boss Roster</h2>
+                <p className="text-base text-slate-300 text-pretty">
+                  Select one avatar to queue the stage or add a new leader to the roster for everyone to sling at.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setView('add')}
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-emerald-500/50 bg-emerald-500/20 px-6 text-base font-medium text-emerald-200 transition hover:border-emerald-400 hover:bg-emerald-400/30 hover:text-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 whitespace-nowrap"
+                >
+                  Add Boss
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView('leaderboard')}
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-rose-500/50 bg-rose-500/10 px-5 text-base font-medium text-rose-100 transition hover:border-rose-400 hover:bg-rose-500/20 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300 whitespace-nowrap"
+                >
+                  Leaderboard
+                </button>
+              </div>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-              <button
-                type="button"
-                onClick={() => setView('add')}
-                className="inline-flex items-center justify-center rounded-full border border-emerald-500/50 bg-emerald-500/20 px-6 py-2.5 text-base font-medium text-emerald-200 transition hover:border-emerald-400 hover:bg-emerald-400/30 hover:text-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
-              >
-                Add Boss
-              </button>
-              <button
-                type="button"
-                onClick={() => setParodyMode((mode) => !mode)}
-                aria-pressed={parodyMode}
-                className={`inline-flex items-center gap-3 rounded-full border px-5 py-2.5 text-base font-medium font-bubble transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-400 ${
-                  parodyMode
-                    ? 'border-ink-400 bg-ink-500/20 text-white'
-                    : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-ink-300/80 hover:text-white'
-                }`}
-              >
-                <span
-                  className={`h-5 w-5 rounded-full transition ${parodyMode ? 'bg-ink-300' : 'bg-slate-700'}`}
-                />
-                <span className="font-display text-base">Parody mode</span>
-              </button>
-            </div>
-          </div>
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {bosses.map((boss) => (
@@ -440,14 +466,15 @@ function App() {
                 parodyMode={parodyMode}
                 selected={boss.id === selectedBoss?.id}
                 onSelect={(profile) => setSelectedBossId(profile.id)}
+                onActivate={(profile) => launchStageForBoss(profile)}
               />
             ))}
           </div>
 
           <div className="flex flex-col items-center gap-4 rounded-2xl border border-slate-800 bg-slate-950/60 p-7 text-center font-bubble sm:flex-row sm:justify-between sm:text-left">
-            <div>
-              <p className="text-xl font-semibold text-white heading-fun">Smash Now</p>
-              <p className="text-base text-slate-300">
+            <div className="w-full">
+              <p className="text-xl font-semibold text-white heading-fun break-words text-pretty">Smash Now</p>
+              <p className="text-base text-slate-300 text-pretty break-words">
                 {selectedBoss
                   ? `Ready to queue ${selectedBoss.name} on the stage.`
                   : 'Select a boss to unlock the stage.'}
@@ -578,8 +605,16 @@ function StatusScreen({ title, message, tone = 'default', actionLabel, onAction 
         <p className="text-base font-semibold uppercase tracking-[0.4em] text-ink-300/70 tagline-fun">
           Boss Roster
         </p>
-        <h1 className="text-4xl font-semibold tracking-tight text-white heading-fun sm:text-5xl">{title}</h1>
-        <p className={`text-lg leading-8 ${tone === 'error' ? 'text-rose-200' : 'text-slate-300'}`}>{message}</p>
+        <h1 className="text-4xl font-semibold tracking-tight text-white heading-fun sm:text-5xl break-words text-pretty">
+          {title}
+        </h1>
+        <p
+          className={`text-lg leading-8 text-pretty break-words ${
+            tone === 'error' ? 'text-rose-200' : 'text-slate-300'
+          }`}
+        >
+          {message}
+        </p>
         {actionLabel && onAction ? (
           <button
             type="button"

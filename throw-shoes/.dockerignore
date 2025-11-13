@@ -1,0 +1,15 @@
+node_modules
+.npmrc
+.pnpm-store
+.yarn
+.yarnrc*
+dist
+.turbo
+.git
+.gitignore
+.DS_Store
+*.local
+coverage
+tmp
+**/Thumbs.db
+infra/tmp

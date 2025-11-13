@@ -367,11 +367,71 @@ export function useSoundBoard() {
     }
   }, [ensureContext])
 
+  const playHeavyCheer = useCallback(async () => {
+    const ctx = await ensureContext()
+    if (!ctx) return
+    const now = ctx.currentTime
+
+    const master = ctx.createGain()
+    master.gain.setValueAtTime(0.7, now)
+    master.connect(ctx.destination)
+
+    const crowd = ctx.createBufferSource()
+    const crowdBuffer = ctx.createBuffer(1, Math.round(ctx.sampleRate * 1.8), ctx.sampleRate)
+    const crowdData = crowdBuffer.getChannelData(0)
+    let last = 0
+    for (let i = 0; i < crowdData.length; i += 1) {
+      const white = Math.random() * 2 - 1
+      crowdData[i] = (last * 0.96 + white * 0.2) / 1.08
+      last = crowdData[i]
+    }
+    crowd.buffer = crowdBuffer
+
+    const crowdFilter = ctx.createBiquadFilter()
+    crowdFilter.type = 'bandpass'
+    crowdFilter.frequency.value = 520
+    crowdFilter.Q.value = 0.8
+
+    const crowdGain = ctx.createGain()
+    crowdGain.gain.setValueAtTime(0.0001, now)
+    crowdGain.gain.linearRampToValueAtTime(0.2, now + 0.08)
+    crowdGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.6)
+
+    crowd.connect(crowdFilter)
+    crowdFilter.connect(crowdGain)
+    crowdGain.connect(master)
+    crowd.start(now)
+    crowd.stop(now + 1.8)
+
+    for (let i = 0; i < 3; i += 1) {
+      const start = now + 0.25 + i * 0.18
+      const hoot = ctx.createOscillator()
+      hoot.type = 'triangle'
+      hoot.frequency.setValueAtTime(420 - i * 40, start)
+      hoot.frequency.exponentialRampToValueAtTime(220 - i * 20, start + 0.3)
+
+      const hootGain = ctx.createGain()
+      hootGain.gain.setValueAtTime(0.001, start)
+      hootGain.gain.linearRampToValueAtTime(0.12, start + 0.04)
+      hootGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.5)
+
+      const pan = ctx.createStereoPanner()
+      pan.pan.setValueAtTime(i === 1 ? 0.25 : i === 0 ? -0.35 : 0.4, start)
+
+      hoot.connect(hootGain)
+      hootGain.connect(pan)
+      pan.connect(master)
+      hoot.start(start)
+      hoot.stop(start + 0.55)
+    }
+  }, [ensureContext])
+
   return {
     playDraw,
     playRelease,
     playImpact,
     playCelebration,
+    playHeavyCheer,
   }
 }
 

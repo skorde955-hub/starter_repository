@@ -221,4 +221,17 @@ body {
     text-transform: uppercase;
     animation: celebration-glow 1.2s ease-in-out infinite;
   }
+
+  @keyframes ticker-loop {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .ticker-strip {
+    animation: ticker-loop 26s linear infinite;
+  }
 }

@@ -29,125 +29,26 @@
       "mugshot": "/img/Faces/cutout_Varun.png"
     },
     "metrics": {
-      "totalHits": 16
+      "totalHits": 28
     },
     "createdAt": "2024-10-01T00:00:00.000Z"
   },
   {
-    "id": "rahul",
-    "name": "Rahul Sanghvi",
-    "role": "MDP, Industrial Goods & Travel (Mumbai)",
-    "description": "Drives large-scale transformations across industrial goods and logistics.",
-    "image": "/img/Faces/cutout_Rahul_Sanghvi.png",
-    "parodyImage": "/img/Faces/cutout_Rahul_Sanghvi.png",
+    "id": "541c0f41-9e1d-4db0-a932-3e95028b1b2a",
+    "name": "Aamod Kharb",
+    "role": "PL, Industrial Goods",
+    "description": "Doesn't just work hard, Makes you work hard tooo",
+    "image": "/uploads/541c0f41-9e1d-4db0-a932-3e95028b1b2a/face.png",
+    "parodyImage": "/uploads/541c0f41-9e1d-4db0-a932-3e95028b1b2a/face.png",
     "stageComposite": {
-      "base": "/img/caricature-bodies/body-rahul.png",
+      "base": "/img/caricature-bodies/body-varun.png",
       "face": {
-        "src": "/img/Faces/cutout_Rahul_Sanghvi.png",
-        "rect": {
-          "x": 0.206,
-          "y": -0.395,
-          "width": 0.78,
-          "height": 0.74
-        },
-        "clipRadius": {
-          "x": 0.5,
-          "y": 0.66
-        }
-      }
-    },
-    "assets": {
-      "body": "/img/caricature-bodies/body-rahul.png",
-      "face": "/img/Faces/cutout_Rahul_Sanghvi.png",
-      "mugshot": "/img/Faces/cutout_Rahul_Sanghvi.png"
-    },
-    "metrics": {
-      "totalHits": 6
-    },
-    "createdAt": "2024-10-01T00:00:00.000Z"
-  },
-  {
-    "id": "saurabh",
-    "name": "Saurabh Verma",
-    "role": "MDP, BCG Transform & Industrial Goods",
-    "description": "Helms multi-year industrial transformations, digital ops and capex programs.",
-    "image": "/img/Faces/cutout_SaurabhVerma.png",
-    "parodyImage": "/img/Faces/cutout_SaurabhVerma.png",
-    "stageComposite": {
-      "base": "/img/caricature-bodies/body-saurabh.png",
-      "face": {
-        "src": "/img/Faces/cutout_SaurabhVerma.png",
+        "src": "/uploads/541c0f41-9e1d-4db0-a932-3e95028b1b2a/face.png",
         "rect": {
           "x": 0.204,
-          "y": -0.415,
-          "width": 0.82,
-          "height": 0.78
-        },
-        "clipRadius": {
-          "x": 0.5,
-          "y": 0.68
-        }
-      }
-    },
-    "assets": {
-      "body": "/img/caricature-bodies/body-saurabh.png",
-      "face": "/img/Faces/cutout_SaurabhVerma.png",
-      "mugshot": "/img/Faces/cutout_SaurabhVerma.png"
-    },
-    "metrics": {
-      "totalHits": 6
-    },
-    "createdAt": "2024-10-01T00:00:00.000Z"
-  },
-  {
-    "id": "pallavi",
-    "name": "Pallavi Malani",
-    "role": "MDP, Insurance & Digital Growth (APAC)",
-    "description": "Guides insurers and fintechs on digital growth and customer-centric innovation.",
-    "image": "/img/Faces/cutout_Pallavi_Malani.png",
-    "parodyImage": "/img/Faces/cutout_Pallavi_Malani.png",
-    "stageComposite": {
-      "base": "/img/caricature-bodies/body-pallavi.png",
-      "face": {
-        "src": "/img/Faces/cutout_Pallavi_Malani.png",
-        "rect": {
-          "x": 0.224,
-          "y": -0.445,
+          "y": -0.375,
           "width": 0.72,
-          "height": 0.82
-        },
-        "clipRadius": {
-          "x": 0.48,
-          "y": 0.7
-        }
-      }
-    },
-    "assets": {
-      "body": "/img/caricature-bodies/body-pallavi.png",
-      "face": "/img/Faces/cutout_Pallavi_Malani.png",
-      "mugshot": "/img/Faces/cutout_Pallavi_Malani.png"
-    },
-    "metrics": {
-      "totalHits": 4
-    },
-    "createdAt": "2024-10-01T00:00:00.000Z"
-  },
-  {
-    "id": "e7a26e00-5f9d-4020-9e0e-2f209f65bbf2",
-    "name": "Rahul Jain",
-    "role": "India System Head",
-    "description": "Boss MDP, King of IG client",
-    "image": "/uploads/e7a26e00-5f9d-4020-9e0e-2f209f65bbf2/face.png",
-    "parodyImage": "/uploads/e7a26e00-5f9d-4020-9e0e-2f209f65bbf2/face.png",
-    "stageComposite": {
-      "base": "/uploads/e7a26e00-5f9d-4020-9e0e-2f209f65bbf2/body.png",
-      "face": {
-        "src": "/uploads/e7a26e00-5f9d-4020-9e0e-2f209f65bbf2/face.png",
-        "rect": {
-          "x": 0.23539903846153845,
-          "y": -0.6,
-          "width": 0.88,
-          "height": 0.8623999999999999
+          "height": 0.7
         },
         "clipRadius": {
           "x": 0.5,
@@ -157,13 +58,13 @@
       }
     },
     "assets": {
-      "body": "/uploads/e7a26e00-5f9d-4020-9e0e-2f209f65bbf2/body.png",
-      "face": "/uploads/e7a26e00-5f9d-4020-9e0e-2f209f65bbf2/face.png",
-      "mugshot": "/uploads/e7a26e00-5f9d-4020-9e0e-2f209f65bbf2/mugshot.png"
+      "body": "/img/caricature-bodies/body-varun.png",
+      "face": "/uploads/541c0f41-9e1d-4db0-a932-3e95028b1b2a/face.png",
+      "mugshot": "/uploads/541c0f41-9e1d-4db0-a932-3e95028b1b2a/mugshot.png"
     },
     "metrics": {
-      "totalHits": 4
+      "totalHits": 2
     },
-    "createdAt": "2025-10-24T10:15:49.460Z"
+    "createdAt": "2025-11-13T06:59:14.563Z"
   }
 ]

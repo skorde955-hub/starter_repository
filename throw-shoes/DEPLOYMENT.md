@@ -24,6 +24,10 @@ All commands below are run from the `throw-shoes/` folder.
 REGION=asia-south1               # choose your preferred Cloud Run region
 PROJECT_ID=$(gcloud config get-value project)
 BACKEND_IMAGE=asia-south1-docker.pkg.dev/$PROJECT_ID/throw-shoes/throw-shoes-api
+STATE_BUCKET=$PROJECT_ID-throw-shoes-data
+
+gsutil mb -l $REGION gs://$STATE_BUCKET || true
+gsutil iam ch serviceAccount:$PROJECT_ID-compute@developer.gserviceaccount.com:objectAdmin gs://$STATE_BUCKET
 
 gcloud artifacts repositories create throw-shoes \
   --repository-format=docker \
@@ -38,7 +42,8 @@ gcloud run deploy throw-shoes-api \
   --image $BACKEND_IMAGE \
   --platform=managed \
   --region=$REGION \
-  --allow-unauthenticated
+  --allow-unauthenticated \
+  --set-env-vars="BOSSES_BUCKET=$STATE_BUCKET"
 ```
 
 Note the HTTPS URL that Cloud Run outputs (e.g. `https://throw-shoes-api-xxxx.a.run.app`).

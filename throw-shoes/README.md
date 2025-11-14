@@ -59,6 +59,7 @@ This template provides a minimal setup to get React working in Vite with HMR and
 ### Production builds & Cloud Run
 
 - `VITE_API_BASE_URL` controls where the SPA sends API calls. The dev server proxies `/api` to `localhost:4000`, but production builds should set `VITE_API_BASE_URL` to your deployed API URL (for example `VITE_API_BASE_URL=https://throw-shoes-api-xxxx.a.run.app/api npm run build`).
+- `BOSSES_BUCKET` (backend) tells the API which Cloud Storage bucket to use as the persistent store for `bosses.json`. Without this, Cloud Run's ephemeral filesystem will drop newly added bosses when the container restarts.
 - `Dockerfile.backend`, `Dockerfile.frontend`, `.dockerignore`, `cloudbuild.backend.yaml`, `cloudbuild.frontend.yaml`, and `DEPLOYMENT.md` describe the exact Cloud Run workflow for running the Node API + Python tooling alongside the static frontend.
 
 Currently, two official plugins are available:

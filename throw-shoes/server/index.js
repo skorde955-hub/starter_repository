@@ -5,6 +5,7 @@ import path from 'path'
 import { randomUUID } from 'crypto'
 import { spawn } from 'child_process'
 import { fileURLToPath } from 'url'
+import { CloudStorageSync } from './cloudStorageSync.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -85,10 +86,22 @@ class Boss {
 }
 
 class FileSystemBossRepository {
-  constructor({ dataFile, seedFile }) {
+  constructor({ dataFile, seedFile, storageSync }) {
     this.dataFile = dataFile
     this.seedFile = seedFile
+    this.storageSync = storageSync
     ensureDirSync(path.dirname(this.dataFile))
+    this._bosses = []
+  }
+
+  async init() {
+    if (this.storageSync?.isEnabled) {
+      const restored = await this.storageSync.restore(this.dataFile)
+      if (!restored && fs.existsSync(this.seedFile)) {
+        fs.copyFileSync(this.seedFile, this.dataFile)
+        await this.storageSync.backup(this.dataFile)
+      }
+    }
     this._bosses = this._load()
   }
 
@@ -113,20 +126,27 @@ class FileSystemBossRepository {
     return this._bosses.map((boss) => new Boss(boss))
   }
 
-  add(boss) {
+  async add(boss) {
     this._bosses.push(boss)
-    this._persist(this._bosses)
+    await this._persistAsync()
     return boss
   }
 
-  incrementHit(id) {
+  async incrementHit(id) {
     const boss = this._bosses.find((item) => item.id === id)
     if (!boss) {
       throw new Error('Boss not found')
     }
     boss.metrics.totalHits = (boss.metrics.totalHits ?? 0) + 1
-    this._persist(this._bosses)
+    await this._persistAsync()
     return boss
+  }
+
+  async _persistAsync() {
+    this._persist(this._bosses)
+    if (this.storageSync?.isEnabled) {
+      await this.storageSync.backup(this.dataFile)
+    }
   }
 }
 
@@ -254,11 +274,11 @@ class BossService {
       },
     })
 
-    this.repository.add(boss)
+    await this.repository.add(boss)
     return boss
   }
 
-  recordHit(id) {
+  async recordHit(id) {
     return this.repository.incrementHit(id)
   }
 }
@@ -302,7 +322,7 @@ class BossHttpServer {
 
       if (req.method === 'POST' && /^\/api\/bosses\/[^/]+\/hit$/.test(url.pathname)) {
         const id = url.pathname.split('/')[3]
-        const boss = this.service.recordHit(id)
+        const boss = await this.service.recordHit(id)
         this.json(res, 200, { boss: boss.toJSON() })
         return
       }
@@ -367,12 +387,14 @@ class BossHttpServer {
   }
 }
 
-function bootstrap() {
+async function bootstrap() {
   const projectRoot = path.resolve(__dirname, '..')
   const repository = new FileSystemBossRepository({
     dataFile: path.join(__dirname, 'data', 'bosses.json'),
     seedFile: path.join(__dirname, 'data', 'seed-bosses.json'),
+    storageSync: createStorageSync(),
   })
+  await repository.init()
   const assetPipeline = new AssetPipeline({
     projectRoot,
     uploadsDir: path.join(projectRoot, 'public', 'uploads'),
@@ -386,7 +408,19 @@ function bootstrap() {
   server.listen()
 }
 
-bootstrap()
+bootstrap().catch((error) => {
+  console.error('Failed to start server', error)
+  process.exit(1)
+})
+
+function createStorageSync() {
+  const bucket = process.env.BOSSES_BUCKET
+  if (!bucket) return null
+  return new CloudStorageSync({
+    bucket,
+    objectName: process.env.BOSSES_OBJECT || 'bosses.json',
+  })
+}
 
 function guessMimeType(filePath) {
   const ext = path.extname(filePath).toLowerCase()

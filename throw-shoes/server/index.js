@@ -151,9 +151,10 @@ class FileSystemBossRepository {
 }
 
 class AssetPipeline {
-  constructor({ projectRoot, uploadsDir }) {
+  constructor({ projectRoot, uploadsDir, storageSync }) {
     this.projectRoot = projectRoot
     this.uploadsDir = uploadsDir
+    this.storageSync = storageSync
     ensureDirSync(this.uploadsDir)
   }
 
@@ -181,7 +182,7 @@ class AssetPipeline {
       facePublicPath: this.publicPath(faceOutputPath),
     })
 
-    return {
+    const result = {
       stageComposite,
       assets: {
         body: UNIVERSAL_BODY_PUBLIC_PATH,
@@ -190,6 +191,14 @@ class AssetPipeline {
       },
       previewImage: this.publicPath(faceOutputPath),
     }
+
+    if (this.storageSync?.isEnabled) {
+      void this.storageSync.syncUploads(this.uploadsDir).catch((error) => {
+        console.warn('[storage-sync] failed to upload assets:', error.message)
+      })
+    }
+
+    return result
   }
 
   async runCropUtility({ mugshot, body, faceOut, metadataOut }) {
@@ -389,15 +398,21 @@ class BossHttpServer {
 
 async function bootstrap() {
   const projectRoot = path.resolve(__dirname, '..')
+  const storageSync = createStorageSync()
+  const uploadsDir = path.join(projectRoot, 'public', 'uploads')
+  if (storageSync?.isEnabled) {
+    await storageSync.restoreUploads(uploadsDir)
+  }
   const repository = new FileSystemBossRepository({
     dataFile: path.join(__dirname, 'data', 'bosses.json'),
     seedFile: path.join(__dirname, 'data', 'seed-bosses.json'),
-    storageSync: createStorageSync(),
+    storageSync,
   })
   await repository.init()
   const assetPipeline = new AssetPipeline({
     projectRoot,
-    uploadsDir: path.join(projectRoot, 'public', 'uploads'),
+    uploadsDir,
+    storageSync,
   })
   const service = new BossService({ repository, assetPipeline })
   const server = new BossHttpServer({
